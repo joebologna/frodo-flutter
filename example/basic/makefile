@@ -17,4 +17,5 @@ run:
 #
 frodo:
 	frodo gateway calc/calculator_service.go && \
-	frodo client  calc/calculator_service.go
+	frodo client  calc/calculator_service.go && \
+	frodo client  calc/calculator_service.go --language=flutter
