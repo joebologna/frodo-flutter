@@ -4,6 +4,8 @@
 //   Source:    {{ .Path }}
 //   Generator: https://github.com/monadicstack/frodo
 //
+// ignore_for_file: non_constant_identifier_names, unused_element, prefer_null_aware_operators, empty_constructor_bodies, avoid_function_literals_in_foreach_calls, prefer_collection_literals
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -33,15 +35,17 @@ class {{ $clientName }} {
     var route = '{{ .Gateway.Path }}';
     var url = _joinUrl([baseURL, pathPrefix, _buildRequestPath(method, route, requestJson)]);
 
-    var response = await http.post(Uri.parse(url), body: jsonEncode(requestJson));
-    if (response.statusCode == 200) {
-      // If the server did return a 200 OK response,
-      // then parse the JSON.
-      return {{ .Response.Name }}.fromJson(jsonDecode(response.body));
-    } else {
-      // If the server did not return a 200 OK response,
-      // then throw an exception.
-      throw Exception('Failed to load {{ .Response.Name }} ');
+    try {
+      var response = await http.post(Uri.parse(url), body: jsonEncode(requestJson));
+      if (response.statusCode == 200) {
+        // If the server did return a 200 OK response,parse the JSON.
+        return {{ .Response.Name }}.fromJson(jsonDecode(response.body));
+      } else {
+        // If the server did not return a 200 OK response,throw an exception.
+        throw Exception('Failed to load {{ .Response.Name }}, status code: ${response.statusCode}');
+      }
+    } catch (e) {
+      rethrow;
     }
   }
   {{ end }}
@@ -70,10 +74,10 @@ class {{ $clientName }} {
 
     // GET/DELETE/etc will pass all values through the query string.
     var queryValues = requestJson.keys
-      .map((key) => key + '=' + stringify(requestJson, key))
+      .map((key) => '$key=${stringify(requestJson, key)}')
       .join('&');
 
-    return resolvedPath + '?' + queryValues;
+    return '$resolvedPath?$queryValues';
   }
 
   Future<T> _handleResponse<T>(HttpClientResponse httpResponse, T Function(Map<String, dynamic>) factory) async {
@@ -161,7 +165,7 @@ class {{ $clientName }} {
     var fileName = contentDisposition.substring(fileNameAttrPos + 9);
     fileName = fileName.startsWith('"') ? fileName.substring(1) : fileName;
     fileName = fileName.endsWith('"') ? fileName.substring(0, fileName.length - 1) : fileName;
-    fileName = fileName.replaceAll('\\"', '\"');
+    fileName = fileName.replaceAll('\\"', '"');
     return fileName;
   }
 }
@@ -182,7 +186,7 @@ class {{ $exceptionName }} implements Exception {
     catch (_) {
       message = body;
     }
-    throw new {{ $exceptionName }}(response.statusCode, message);
+    throw {{ $exceptionName }}(response.statusCode, message);
   }
 }
 
@@ -231,6 +235,7 @@ class {{ $typeName }} implements {{ $serviceName }}ModelJSON { {{ range .Fields 
     {{ end }}
   }
 
+  @override
   Map<String, dynamic> toJson() {
     return { {{ range .Fields -}}
       {{ $fieldName := .Binding.Name }}
@@ -258,7 +263,7 @@ class {{ $typeName }} implements {{ $serviceName }}ModelJSON { {{ range .Fields 
 
 class {{$serviceName}}ModelJSON {
   Map<String, dynamic> toJson() {
-    throw new Exception('toJson not implemented');
+    throw Exception('toJson not implemented');
   }
 }
 
@@ -270,7 +275,7 @@ Future<String> _streamToString(Stream<List<int>>? stream) async {
   if (stream == null) {
     return '';
   }
-  var bodyCompleter = new Completer<String>();
+  var bodyCompleter = Completer<String>();
   stream.transform(utf8.decoder).listen(bodyCompleter.complete);
   return bodyCompleter.future;
 }
