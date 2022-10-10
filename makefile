@@ -9,8 +9,8 @@ build:
 
 install: build
 	@ \
-	echo installing in $(HOME)/go/bin && \
-	go install
+ 	echo "Overwriting go-installed version..." && \
+ 	cp out/frodo $$GOPATH/bin/frodo
 
 #
 # Uses the frodo CLI to build the gateway and clients used in our test suites to validate code generation. This will
